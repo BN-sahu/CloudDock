@@ -220,17 +220,17 @@ The baseline image produced:
 
 | Severity | Findings |
 |---|---:|
-| HIGH | 497 |
-| CRITICAL | 56 |
-| **HIGH + CRITICAL** | **553** |
+| HIGH | 674 |
+| CRITICAL | 58 |
+| **HIGH + CRITICAL** | **732** |
 
 The hardened image produced:
 
 | Severity | Findings |
 |---|---:|
-| HIGH | 51 |
-| CRITICAL | 3 |
-| **HIGH + CRITICAL** | **54** |
+| HIGH | 48 |
+| CRITICAL | 0 |
+| **HIGH + CRITICAL** | **48** |
 
 This demonstrates a substantial reduction in HIGH and CRITICAL vulnerability findings after container hardening.
 
