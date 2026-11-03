@@ -1,0 +1,50 @@
+
+name: CloudDock Security Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-scan:
+    name: Build and Scan Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build hardened Docker image
+        run: |
+          docker build \
+            -t clouddock-app:hardened \
+            -f Dockerfile \
+            .
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: clouddock-app:hardened
+          format: table
+          output: trivy-image-report.txt
+          severity: HIGH,CRITICAL
+          vuln-type: os,library
+          exit-code: '0'
+
+      - name: Upload Trivy scan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clouddock-trivy-report
+          path: trivy-image-report.txt
+          if-no-files-found: warn
+          retention-days: 30

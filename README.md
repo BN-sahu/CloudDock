@@ -92,6 +92,7 @@ The current project structure is:
     ├── .github/
     │   └── workflows/
     ├── Dockerfile
+    ├── compose.yaml
     ├── .dockerignore
     ├── .gitignore
     ├── README.md
@@ -193,6 +194,50 @@ Run the container:
 The application can then be accessed at:
 
 **http://localhost:5000**
+
+### Recommended: Hardened Runtime Deployment Using Docker Compose
+
+CloudDock provides a reproducible secure deployment configuration through Docker Compose.
+
+The `compose.yaml` configuration applies additional runtime security restrictions:
+
+- Runs the application as a non-root user (`appuser`).
+- Uses a read-only root filesystem.
+- Drops all Linux capabilities.
+- Enables `no-new-privileges`.
+- Provides restricted temporary storage through `/tmp`.
+- Includes an automated application health check.
+- Configures an automatic restart policy (`unless-stopped`).
+
+Start the hardened application:
+
+```bash
+docker compose up -d
+```
+
+Verify the deployment:
+
+```bash
+docker compose ps
+docker compose logs
+```
+
+Test the application:
+
+```bash
+curl http://localhost:5000/
+curl http://localhost:5000/health
+```
+
+Stop the deployment:
+
+```bash
+docker compose down
+```
+
+The Compose deployment was tested successfully. Both application endpoints returned HTTP 200, and the container reported a healthy status.
+
+The runtime security configuration was independently verified using Docker inspection and in-container security tests.
 
 ---
 
