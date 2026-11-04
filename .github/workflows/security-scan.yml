@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build-and-scan:
@@ -49,6 +50,25 @@ jobs:
           severity: CRITICAL
           vuln-type: os,library
           exit-code: '1'
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push hardened image to GHCR
+        if: github.event_name != 'pull_request'
+        run: |
+          IMAGE_NAME=ghcr.io/bn-sahu/clouddock-app
+
+          docker tag clouddock-app:hardened $IMAGE_NAME:latest
+          docker tag clouddock-app:hardened $IMAGE_NAME:${{ github.sha }}
+
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:${{ github.sha }}
 
       - name: Upload Trivy scan report
         uses: actions/upload-artifact@v4
