@@ -40,6 +40,16 @@ jobs:
           vuln-type: os,library
           exit-code: '0'
 
+      - name: Block image if CRITICAL vulnerabilities are found
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: clouddock-app:hardened
+          format: table
+          severity: CRITICAL
+          vuln-type: os,library
+          exit-code: '1'
+
       - name: Upload Trivy scan report
         uses: actions/upload-artifact@v4
         if: always()
