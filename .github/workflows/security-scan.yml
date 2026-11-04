@@ -78,3 +78,47 @@ jobs:
           path: trivy-image-report.txt
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Notify Slack on success
+        if: success() && github.event_name != 'pull_request'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE=$(printf 'CloudDock pipeline succeeded!\nRepository: %s\nCommit: %s\nImage: ghcr.io/bn-sahu/clouddock-app:latest\nRun: %s/%s/actions/runs/%s' \
+            "$GITHUB_REPOSITORY" \
+            "$GITHUB_SHA" \
+            "$GITHUB_SERVER_URL" \
+            "$GITHUB_REPOSITORY" \
+            "$GITHUB_RUN_ID")
+
+          PAYLOAD=$(jq -n --arg text "$MESSAGE" '{text: $text}')
+
+          if ! curl --fail --silent --show-error \
+            -X POST \
+            -H "Content-Type: application/json" \
+            --data "$PAYLOAD" \
+            "$SLACK_WEBHOOK_URL"; then
+            echo "::warning::Slack success notification could not be delivered"
+          fi
+
+      - name: Notify Slack on failure
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE=$(printf 'CloudDock pipeline FAILED!\nRepository: %s\nCommit: %s\nRun: %s/%s/actions/runs/%s' \
+            "$GITHUB_REPOSITORY" \
+            "$GITHUB_SHA" \
+            "$GITHUB_SERVER_URL" \
+            "$GITHUB_REPOSITORY" \
+            "$GITHUB_RUN_ID")
+
+          PAYLOAD=$(jq -n --arg text "$MESSAGE" '{text: $text}')
+
+          if ! curl --fail --silent --show-error \
+            -X POST \
+            -H "Content-Type: application/json" \
+            --data "$PAYLOAD" \
+            "$SLACK_WEBHOOK_URL"; then
+            echo "::warning::Slack failure notification could not be delivered"
+          fi
