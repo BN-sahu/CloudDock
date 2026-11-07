@@ -2,38 +2,49 @@
 
 ## Secure Containerized Cloud Deployment Platform
 
-CloudDock is a security-focused cloud deployment project that demonstrates how a containerized web application can be built, hardened, scanned for vulnerabilities, and integrated into a secure CI/CD workflow.
+CloudDock is a security-focused container deployment project that demonstrates how a Flask application can be containerized, hardened, scanned for vulnerabilities, and integrated into an automated CI/CD security workflow.
 
-The project focuses on improving container security before application deployment using Docker hardening practices and Trivy vulnerability scanning.
+The project focuses on improving container security before deployment through Docker hardening practices, Trivy vulnerability scanning, and GitHub Actions automation.
 
 ---
 
 ## 1. Project Overview
 
-CloudDock introduces a security-focused workflow for containerized cloud applications.
+CloudDock demonstrates a secure container development and deployment workflow.
 
-**Workflow:**
+The project uses a Flask application as the application workload and Docker to package it into a container image.
 
-Application → Docker Container → Baseline Scan → Container Hardening → Hardened Image → Trivy Scan → CI/CD → AWS Deployment
+The security workflow includes:
 
-Slack/Webhook notifications will provide alerts for security and deployment events.
+1. Building a baseline Docker image.
+2. Scanning the baseline image using Trivy.
+3. Applying Docker image hardening techniques.
+4. Building a hardened Docker image.
+5. Scanning the hardened image.
+6. Comparing vulnerability findings.
+7. Automating image building and security checks using GitHub Actions.
+8. Publishing validated images to GitHub Container Registry (GHCR).
+
+The project also demonstrates secure local container deployment using Docker Compose.
 
 ---
 
 ## 2. Objectives
 
-The main objectives of CloudDock are:
+The primary objectives of CloudDock are:
 
-- Containerize a Python Flask application using Docker.
-- Establish a baseline vulnerability profile.
-- Harden the Docker image.
+- Containerize a Flask web application using Docker.
+- Establish a baseline for container vulnerability assessment.
+- Reduce unnecessary packages and dependencies in the runtime image.
+- Implement multi-stage Docker builds.
+- Run containers using a non-root user.
+- Apply container runtime security restrictions.
 - Scan container images using Trivy.
-- Run the application as a non-root user.
-- Use a multi-stage Docker build.
-- Integrate security scanning into GitHub Actions.
-- Send security and deployment notifications through Slack/Webhooks.
-- Deploy the validated container to AWS.
-- Build a repeatable security-focused CI/CD workflow.
+- Compare baseline and hardened image vulnerabilities.
+- Integrate vulnerability scanning into GitHub Actions.
+- Enforce a security gate for CRITICAL vulnerabilities.
+- Publish validated container images to GHCR.
+- Provide CI/CD status notifications through Slack webhooks.
 
 ---
 
@@ -44,12 +55,13 @@ The main objectives of CloudDock are:
 | Python | Application development |
 | Flask | Web application framework |
 | Docker | Containerization |
-| Trivy | Vulnerability scanning |
-| Git | Version control |
-| GitHub | Source code repository |
+| Docker Compose | Local container deployment |
+| Trivy | Container vulnerability scanning |
+| Git and GitHub | Version control and source-code management |
 | GitHub Actions | CI/CD automation |
-| Slack/Webhook | Notifications |
-| AWS | Cloud deployment |
+| GitHub Container Registry | Container image publishing |
+| Slack Webhooks | Pipeline notifications |
+| Ubuntu | Development environment |
 
 ---
 
@@ -57,111 +69,133 @@ The main objectives of CloudDock are:
 
 ### Completed
 
-- [x] Flask application
-- [x] Docker containerization
-- [x] Multi-stage Docker build
-- [x] Non-root container execution
-- [x] Docker `.dockerignore`
-- [x] Git `.gitignore`
-- [x] Baseline Trivy scan
-- [x] Hardened Docker image
-- [x] Hardened Trivy scan
-- [x] Trivy security reports
-- [x] GitHub repository
-- [x] Main branch
+- Flask application with home and health-check endpoints.
+- Baseline Docker image creation.
+- Baseline vulnerability scanning using Trivy.
+- Multi-stage Docker build.
+- Python dependency updates.
+- Reduced runtime package footprint.
+- Non-root container execution.
+- Hardened Docker image creation.
+- Hardened image vulnerability scanning.
+- Docker Compose deployment.
+- Read-only container filesystem.
+- Dropped Linux capabilities.
+- No-new-privileges security configuration.
+- Container health checks.
+- GitHub Actions workflow for automated image building and scanning.
+- CRITICAL vulnerability security gate.
+- GHCR image publishing workflow.
+- Slack notification steps in the CI/CD workflow.
 
-### In Progress
+### Remaining / Future Work
 
-- [ ] GitHub Actions CI/CD pipeline
-- [ ] Trivy integration into CI
-- [ ] Slack/Webhook notifications
-- [ ] Container registry workflow
-- [ ] AWS deployment
-- [ ] Deployment monitoring
-- [ ] Zero/minimal-downtime deployment strategy
+- Configure and verify actual Slack webhook delivery using GitHub Secrets.
+- Synchronize repository Trivy reports with the latest scan results.
+- Implement AWS deployment.
+- Add production-grade deployment monitoring and rollback mechanisms.
 
 ---
 
 ## 5. Project Structure
 
-The current project structure is:
-
-    CloudDock/
-    ├── app/
-    │   └── app.py
-    ├── .github/
-    │   └── workflows/
-    ├── Dockerfile
-    ├── compose.yaml
-    ├── .dockerignore
-    ├── .gitignore
-    ├── README.md
-    ├── requirements.txt
-    ├── trivy-baseline.json
-    ├── trivy-baseline.txt
-    └── trivy-hardened.json
+```text
+CloudDock/
+│
+├── app/
+│   └── app.py
+│
+├── .github/
+│   └── workflows/
+│       └── security-scan.yml
+│
+├── Dockerfile
+├── compose.yaml
+├── requirements.txt
+├── .dockerignore
+├── .gitignore
+│
+├── trivy-baseline.json
+├── trivy-baseline.txt
+├── trivy-hardened.json
+│
+└── README.md
+```
 
 ---
 
 ## 6. Docker Architecture
 
-CloudDock uses a multi-stage Docker build.
+CloudDock uses a multi-stage Docker build to separate dependency installation from the final runtime environment.
 
 ### Stage 1 - Builder
 
 The builder stage:
 
+- Uses the Python 3.11 slim base image.
 - Creates a Python virtual environment.
-- Installs application dependencies.
-- Keeps dependency installation separate from the runtime image.
+- Installs the required application dependencies.
+- Updates Python packaging tools.
+- Prepares the virtual environment for the runtime stage.
 
 ### Stage 2 - Runtime
 
 The runtime stage:
 
-- Uses the Python slim image.
-- Copies the virtual environment from the builder.
-- Copies the application.
-- Creates a dedicated `appuser`.
-- Runs the application without root privileges.
+- Uses a Python 3.11 slim base image.
+- Updates operating-system packages.
+- Installs updated Python packaging tools.
+- Creates a dedicated non-root user named `appuser`.
+- Copies the prepared virtual environment from the builder stage.
+- Copies the Flask application.
+- Runs the application using the non-root user.
 
-This approach helps reduce unnecessary build artifacts and improves container security.
+This approach separates the build environment from the runtime environment and reduces unnecessary components in the final image.
 
 ---
 
 ## 7. Security Hardening
 
-CloudDock applies several container security practices.
+CloudDock applies multiple container hardening techniques.
 
 ### Non-root execution
 
-The application runs as `appuser` instead of root.
+The application runs using a dedicated non-root user named `appuser` instead of the root account.
 
-Verify this with:
-
-    docker run --rm clouddock-app:hardened id
-
-Expected result:
-
-    uid=1000(appuser) gid=1000(appuser) groups=1000(appuser)
+This follows the principle of least privilege.
 
 ### Multi-stage build
 
-The Dockerfile separates dependency installation from the final runtime environment.
+A multi-stage Docker build separates dependency preparation from the final runtime image.
+
+Only the prepared application environment is copied into the runtime stage.
 
 ### Slim runtime image
 
-The runtime uses a Python slim base image and copies the application environment from the builder.
+The project uses the Python slim image to reduce the runtime footprint.
+
+Unnecessary packages and components are avoided wherever possible.
+
+### Python dependency updates
+
+Python packaging tools are updated to secure versions during image construction.
 
 ### Docker ignore rules
 
-The `.dockerignore` file excludes unnecessary files such as:
+The `.dockerignore` file prevents unnecessary development files and local artifacts from being copied into the Docker build context.
 
-- `venv/`
-- `__pycache__/`
-- `*.pyc`
-- `.git/`
-- `.github/`
+### Runtime security using Docker Compose
+
+The hardened container uses the following runtime restrictions:
+
+- Non-root execution.
+- Read-only root filesystem.
+- All Linux capabilities dropped.
+- No-new-privileges security option.
+- Temporary writable storage through a restricted `/tmp` tmpfs.
+- Container health checks.
+
+These configurations reduce the container's privileges and writable attack surface.
 
 ---
 
@@ -169,63 +203,110 @@ The `.dockerignore` file excludes unnecessary files such as:
 
 ### Run directly with Python
 
-Activate the virtual environment:
+Navigate to the project directory:
 
-    source venv/bin/activate
+```bash
+cd CloudDock
+```
 
 Install dependencies:
 
-    pip install -r requirements.txt
+```bash
+pip install -r requirements.txt
+```
 
-Run the application:
+Start the application:
 
-    python app/app.py
+```bash
+python app/app.py
+```
+
+Open the application:
+
+```text
+http://localhost:5000
+```
+
+Health-check endpoint:
+
+```text
+http://localhost:5000/health
+```
 
 ### Run using Docker
 
-Build the image:
+Build the hardened image:
 
-    docker build -t clouddock-app:hardened .
+```bash
+docker build -t clouddock-app:hardened .
+```
 
 Run the container:
 
-    docker run --rm -p 5000:5000 --name clouddock-hardened clouddock-app:hardened
-
-The application can then be accessed at:
-
-**http://localhost:5000**
-
-### Recommended: Hardened Runtime Deployment Using Docker Compose
-
-CloudDock provides a reproducible secure deployment configuration through Docker Compose.
-
-The `compose.yaml` configuration applies additional runtime security restrictions:
-
-- Runs the application as a non-root user (`appuser`).
-- Uses a read-only root filesystem.
-- Drops all Linux capabilities.
-- Enables `no-new-privileges`.
-- Provides restricted temporary storage through `/tmp`.
-- Includes an automated application health check.
-- Configures an automatic restart policy (`unless-stopped`).
-
-Start the hardened application:
-
 ```bash
-docker compose up -d
+docker run -d \
+  --name clouddock-test \
+  -p 5000:5000 \
+  clouddock-app:hardened
 ```
 
-Verify the deployment:
+Check the running container:
 
 ```bash
-docker compose ps
-docker compose logs
+docker ps
+```
+
+Check application logs:
+
+```bash
+docker logs clouddock-test
 ```
 
 Test the application:
 
 ```bash
 curl http://localhost:5000/
+```
+
+Test the health endpoint:
+
+```bash
+curl http://localhost:5000/health
+```
+
+### Recommended: Hardened Runtime Deployment Using Docker Compose
+
+Build the hardened image:
+
+```bash
+docker build -t clouddock-app:hardened .
+```
+
+Start the application:
+
+```bash
+docker compose up -d
+```
+
+Check container status:
+
+```bash
+docker compose ps
+```
+
+View application logs:
+
+```bash
+docker compose logs
+```
+
+Test the endpoints:
+
+```bash
+curl http://localhost:5000/
+```
+
+```bash
 curl http://localhost:5000/health
 ```
 
@@ -245,66 +326,115 @@ The runtime security configuration was independently verified using Docker inspe
 
 Trivy is used to identify known vulnerabilities in container images.
 
+Both baseline and hardened images were scanned using Trivy 0.74.0 with identical vulnerability-scanning settings and HIGH/CRITICAL severity filters.
+
 ### Baseline scan
 
-    trivy image --timeout 20m --severity HIGH,CRITICAL clouddock-app:baseline
+```bash
+trivy image \
+  --scanners vuln \
+  --severity HIGH,CRITICAL \
+  --timeout 20m \
+  --format json \
+  --output /tmp/clouddock-baseline-final.json \
+  clouddock-app:baseline
+```
 
 ### Hardened scan
 
-    trivy image --timeout 20m --severity HIGH,CRITICAL clouddock-app:hardened
+```bash
+trivy image \
+  --scanners vuln \
+  --severity HIGH,CRITICAL \
+  --timeout 20m \
+  --format json \
+  --output /tmp/clouddock-hardened-final.json \
+  clouddock-app:hardened
+```
 
 ### Critical vulnerabilities only
 
-    trivy image --timeout 20m --severity CRITICAL clouddock-app:hardened
+```bash
+trivy image \
+  --scanners vuln \
+  --severity CRITICAL \
+  --timeout 20m \
+  clouddock-app:hardened
+```
 
 ---
 
 ## 10. Security Results
 
-The baseline image produced:
+The following results were obtained on 7 November 2026 using Trivy 0.74.0. Both images were scanned with identical settings and HIGH/CRITICAL severity filters.
+
+### Baseline image
+
+- Image: `clouddock-app:baseline`
+- Operating system: Debian 13.6
+- Detected packages: 469
 
 | Severity | Findings |
 |---|---:|
-| HIGH | 674 |
-| CRITICAL | 58 |
-| **HIGH + CRITICAL** | **732** |
+| HIGH | 1,015 |
+| CRITICAL | 61 |
+| **HIGH + CRITICAL** | **1,076** |
+| Unique CVEs | 401 |
 
-The hardened image produced:
+### Hardened image
+
+- Image: `clouddock-app:hardened`
+- Operating system: Debian 13.7
+- Detected packages: 87
 
 | Severity | Findings |
 |---|---:|
-| HIGH | 48 |
+| HIGH | 49 |
 | CRITICAL | 0 |
-| **HIGH + CRITICAL** | **48** |
+| **HIGH + CRITICAL** | **49** |
+| Unique CVEs | 13 |
 
-This demonstrates a substantial reduction in HIGH and CRITICAL vulnerability findings after container hardening.
+### Improvement after hardening
+
+| Metric | Improvement |
+|---|---:|
+| HIGH findings | 95.17% reduction |
+| CRITICAL findings | 100% reduction |
+| Total HIGH + CRITICAL | 95.45% reduction |
+| Unique CVEs | 96.76% reduction |
+
+The improvement reflects the overall hardening process, including operating-system package updates and a reduced runtime package set.
+
+**Finding count clarification:** Total findings represent package-level vulnerability detections. Unique CVEs count distinct vulnerability identifiers. These metrics are not interchangeable.
 
 ### Python dependencies
 
-The hardened image currently reports:
+- Baseline image: 2 HIGH Python-package findings.
+- Hardened image: 0 HIGH or CRITICAL Python-package findings.
 
-**CRITICAL Python vulnerabilities: 0**
+### Residual risk
 
-The remaining CRITICAL findings originate from the Debian `perl-base` package in the base operating system.
+The hardened image still reports 49 HIGH findings across 13 unique CVEs, primarily associated with Debian operating-system packages.
 
-The available Debian repository currently provides the same installed package version, and Trivy does not report a fixed version for these findings.
+The image is not vulnerability-free. Remaining findings should be reviewed and rescanned as upstream security fixes become available.
 
-Therefore, these findings are documented as residual risk rather than removing an essential Debian package solely to obtain a zero-vulnerability scan.
-
-CloudDock does not claim that the hardened image is completely vulnerability-free.
+The baseline and hardened images also use different Debian point releases, so the results represent the overall hardening process rather than the effect of a single Dockerfile modification.
 
 ---
 
 ## 11. Security Reports
 
-Trivy scan results are stored in the repository:
+Trivy scan reports are maintained as project evidence:
 
 - `trivy-baseline.json`
 - `trivy-baseline.txt`
 - `trivy-hardened.json`
 
-These reports provide evidence of the security scanning and hardening process.
+The repository reports were synchronized with the latest comparative scan results generated on 7 November 2026 using Trivy 0.74.0.
 
+Both JSON reports contain the detailed vulnerability findings and image metadata. The baseline text report provides a human-readable summary of the baseline scan.
+
+The original report files were backed up before synchronization.
 ---
 
 ## 12. Git Workflow
@@ -313,23 +443,33 @@ The project uses Git and GitHub for source-code management.
 
 Initialize Git:
 
-    git init
+```bash
+git init
+```
 
 Create the main branch:
 
-    git branch -M main
+```bash
+git branch -M main
+```
 
 Add changes:
 
-    git add .
+```bash
+git add .
+```
 
 Commit changes:
 
-    git commit -m "Description of changes"
+```bash
+git commit -m "Description of changes"
+```
 
 Push changes:
 
-    git push origin main
+```bash
+git push origin main
+```
 
 GitHub repository:
 
@@ -337,74 +477,69 @@ https://github.com/BN-sahu/CloudDock
 
 ---
 
-## 13. Planned CI/CD Pipeline
+## 13. GitHub Actions CI/CD Pipeline
 
-The next stage of CloudDock introduces GitHub Actions.
+CloudDock uses GitHub Actions to automate Docker image building, vulnerability scanning, security gating, and container image publishing.
 
-**Planned workflow:**
+### Implemented workflow
 
-Git Push  
-↓  
-GitHub Actions  
-↓  
-Build Docker Image  
-↓  
-Trivy Security Scan  
-↓  
-Security Decision  
-↓  
-Security Pass → Push Image → AWS Deployment  
-Security Fail → Block Deployment → Slack/Webhook Alert
+1. A push to the main branch, pull request, or manual workflow trigger starts the pipeline.
+2. GitHub Actions checks out the repository.
+3. The hardened Docker image is built.
+4. Trivy scans the image for HIGH and CRITICAL vulnerabilities.
+5. A separate security gate checks for CRITICAL findings.
+6. Successful non-pull-request runs publish the image to GitHub Container Registry (GHCR).
+7. Trivy scan reports are uploaded as GitHub Actions artifacts.
 
-The CI/CD pipeline will use security checks before allowing an image to progress through the deployment workflow.
+### Security policy
+
+- HIGH findings are reported but do not block the pipeline.
+- CRITICAL findings cause the security gate to fail.
+- Pull requests run build and security checks but do not publish images.
+- Non-pull-request runs can publish the image to GHCR after the security checks pass.
+
+The workflow uses GitHub Actions permissions and `GITHUB_TOKEN` for GHCR authentication.
 
 ---
 
 ## 14. Slack and Webhook Notifications
 
-CloudDock will use webhook-based notifications for CI/CD and security events.
+The GitHub Actions workflow includes Slack webhook notification steps for successful and failed pipeline runs.
 
-### Security failure
+Notifications can include:
 
-Example notification:
+- Repository name.
+- Commit identifier.
+- Pipeline result.
+- Container image reference on success.
+- GitHub Actions run link.
 
-**CLOUDDOCK SECURITY ALERT**
+The workflow reads the webhook URL from the `SLACK_WEBHOOK_URL` GitHub Actions secret.
 
-- Repository: CloudDock
-- Image: clouddock-app:hardened
-- CRITICAL: 3
-- HIGH: 51
-- Deployment: BLOCKED
-- Reason: Security scan failure
+This secret must be configured in the repository settings for actual Slack message delivery. If delivery fails, the workflow reports a warning rather than treating the notification failure as a successful delivery.
 
-### Successful deployment
+Webhook credentials must never be committed to the repository.
 
-Example notification:
-
-**CLOUDDOCK DEPLOYMENT SUCCESSFUL**
-
-- Repository: CloudDock
-- Environment: AWS
-- Security Scan: Passed
-- Deployment: Successful
-
-Webhook credentials will be stored as GitHub Secrets and will never be committed to the repository.
+A successful pipeline notification indicates that the configured workflow completed successfully. It does not mean that the image has zero vulnerabilities.
 
 ---
 
-## 15. AWS Deployment
+## 15. Future AWS Deployment
 
-The planned cloud deployment environment is AWS.
+AWS deployment is a planned future extension and is not part of the currently implemented workflow.
 
-The deployment stage will:
+A future deployment stage may:
 
-1. Build the validated Docker image.
-2. Push the image to the selected container registry.
-3. Configure the AWS environment.
-4. Pull the approved image.
-5. Start the application container.
-6. Verify application health.
-7. Report deployment status.
+1. Configure the required AWS environment.
+2. Select an appropriate deployment service.
+3. Retrieve the validated container image from GHCR or another supported registry.
+4. Deploy the application.
+5. Verify application health.
+6. Configure monitoring and rollback mechanisms.
+
+The current project demonstrates local Docker deployment, container hardening, vulnerability scanning, and GitHub Actions automation.
+
+AWS credentials and deployment infrastructure are not required for the current workflow.
 
 ---
 
@@ -412,14 +547,14 @@ The deployment stage will:
 
 CloudDock follows these security principles:
 
-- Least privilege
-- Non-root container execution
-- Minimal runtime environment
-- Automated vulnerability scanning
-- Security before deployment
-- Secrets stored outside source code
-- Repeatable CI/CD
-- Documented residual risk
+- Least privilege.
+- Non-root container execution.
+- Minimal runtime environment.
+- Automated vulnerability scanning.
+- Security before deployment.
+- Secrets stored outside source code.
+- Repeatable CI/CD.
+- Documented residual risk.
 
 ---
 
@@ -429,10 +564,13 @@ CloudDock is currently a development and educational project.
 
 Known limitations include:
 
-- Some vulnerabilities originate from the underlying Debian base image.
-- Not every vulnerability can be immediately fixed when no upstream fixed version is available.
-- AWS deployment and automated CI/CD are still being implemented.
-- Production-grade zero-downtime deployment requires additional infrastructure and health-check mechanisms.
+- The hardened image still reports 49 HIGH vulnerability findings across 13 unique CVEs in the 7 November 2026 scan.
+- Some remaining findings originate from Debian operating-system packages.
+- Vulnerabilities without available upstream fixes may remain until updated packages become available.
+- The CI security gate blocks CRITICAL findings, while HIGH findings are reported but do not fail the pipeline.
+- Slack notification delivery depends on configuring and validating the `SLACK_WEBHOOK_URL` GitHub Secret.
+- AWS deployment is not yet implemented.
+- Production-grade zero-downtime deployment requires additional infrastructure, monitoring, and rollback mechanisms.
 
 ---
 
@@ -440,7 +578,7 @@ Known limitations include:
 
 Future versions may include:
 
-- Automated vulnerability thresholds in CI/CD.
+- More granular vulnerability thresholds and policy enforcement in CI/CD.
 - Container image signing.
 - SBOM generation and validation.
 - Dependency update automation.
@@ -456,18 +594,15 @@ Future versions may include:
 
 CloudDock is being developed as a collaborative project.
 
-Team responsibilities include:
+**Team Members:**
 
-- Application development
-- Containerization and security hardening
-- CI/CD automation
-- Security scanning
-- Slack/Webhook integration
-- Cloud deployment
-- Documentation and testing
+- Badri Narayan Sahu
+- Prithyu Ram B.
 
 ---
 
 ## 20. License
 
-This project is developed for educational and project demonstration purposes.
+This project is developed for academic and educational purposes.
+
+License information can be added when the project team selects an open-source license.
